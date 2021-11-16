@@ -48,7 +48,7 @@ struct capability_info pinbased[5] =
 
 
 
-struct capability_info proc_based[7] =
+struct capability_info proc_based[21] =
 {
 	{ 2, "Interrupt-Window Exiting" },
 	{ 3, "Use TSC Offsetting" },
@@ -56,21 +56,64 @@ struct capability_info proc_based[7] =
 	{ 9, "INVPLG exiting" },
 	{ 10, "MWAIT exiting" },
 	{ 11, "RDPMC exiting" },
-	{ 12, "RDTSC exiting" }
+	{ 12, "RDTSC exiting" },
+	{ 15, "CR3- Load Exiting" },
+	{ 16, "CR3- Store Exiting" },
+	{ 19, "CR8 Load Exiting" },
+	{ 20, "Cr8 Store Exiting" },
+	{ 21, "Use TPR shadow" },
+	{ 22, "NMI- Window Exit" },
+	{ 23, "Move- DR exiting" },
+	{ 24, "Unconditional IO exiting" },
+	{ 25, "USe IO Bitmaps" },
+	{ 27, "Monitor Trap Flag" },
+	{ 28, "Use MSR Bitmaps" },
+	{ 29, "Monitor Exit" },
+	{ 30, "Pause Exit" },
+	{ 31, "Activate Secondary Controls" }
+
 };
 
 
 struct capability_info proc_based_2[7] =
 {
-	{ 2, "Interrupt-Window Exiting" },
-	{ 3, "Use TSC Offsetting" },
-	{ 7, "HLT exiting" },
-	{ 9, "INVPLG exiting" },
-	{ 10, "MWAIT exiting" },
-	{ 11, "RDPMC exiting" },
-	{ 12, "RDTSC exiting" }
+	{ 0, "Virtualize APIC access" },
+	{ 1, "Enable EPT" },
+	{ 2, "Descriptor table exiting" },
+	{ 3, "Enable RDTSCP" },
+	{ 4, "Virtualize x2APIC mode" },
+	{ 5, "Enable VPID" },
+	{ 6, "WBINVD exiting" }
 };
 
+
+
+struct capability_info vm_exit[8] =
+{
+	{ 2, "Save Debug controls" },
+	{ 9, "Host address space size" },
+	{ 12, "Load IA32_PERF_GLOB" },
+	{ 15, "Acknolwdge Interruption on Exit" },
+	{ 18, "Save IA32_PAT" },
+	{ 19, "LOAD IA32 PAT" },
+	{ 20, "Save IA32 EFER" },
+	{ 21, "Load IA32 EFER" }
+};
+
+
+
+struct capability_info vm_entry[9] =
+{
+	{ 2, "Load debug controls" },
+	{ 9, "IA-32e mode guest" },
+	{ 10, "Entry to SMM" },
+	{ 11, "Deactivate dual monitor treatment" },
+	{ 13, "Load IA32_PERF_GLOBL_CTRL" },
+	{ 14, "Load IA32 PAT" },
+	{ 15, "Load IA32_EFER" },
+	{ 16, "Load IA32_BNDCFGS" },
+	{ 17, "Conceal VM entries from Intel PT" }
+};
 /*
  * report_capability
  *
@@ -126,7 +169,29 @@ detect_vmx_features(void)
 	rdmsr(IA32_VMX_PROCBASED_CTLS, lo, hi);
 	pr_info("Pinbased Controls MSR: 0x%llx\n",
 		(uint64_t)(lo | (uint64_t)hi << 32));
-	report_capability(proc_based, 7, lo, hi);
+	report_capability(proc_based, 21, lo, hi);
+
+
+
+		/* Processor based controls  Seconday*/
+	rdmsr(IA32_VMX_PROCBASED_CTLS2, lo, hi);
+	pr_info("Pinbased Controls MSR: 0x%llx\n",
+		(uint64_t)(lo | (uint64_t)hi << 32));
+	report_capability(proc_based_2, 7, lo, hi);
+
+
+	/* VM Exit*/
+	rdmsr(IA32_VMX_EXIT_CTLS, lo, hi);
+	pr_info("Pinbased Controls MSR: 0x%llx\n",
+		(uint64_t)(lo | (uint64_t)hi << 32));
+	report_capability(vm_exit, 8, lo, hi);
+
+
+	/* VM Entry*/
+	rdmsr(IA32_VMX_ENTRY_CTLS, lo, hi);
+	pr_info("Pinbased Controls MSR: 0x%llx\n",
+		(uint64_t)(lo | (uint64_t)hi << 32));
+	report_capability(vm_entry, 9, lo, hi);
 }
 
 /*
