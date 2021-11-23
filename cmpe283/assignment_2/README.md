@@ -22,7 +22,7 @@ Changes :
 1) My current CPU is intel and for task 1, all I had to do was declare a extern variable in the <linux>/arch/x86/kvm/cpuid.h to track the total counts of the exit for cpuid.
 2) Making this variable does not export it for use in other modules, so I had to redefine it in <linux>/arch/x86/kvm/cpuid.c and export it using EXPORT_SYMBOL_GPL 
     EXPORT_SYMBOL_GPL exports the values to be used in other modules signed with GPL licenses. Without this the kernel tree compilation keeps throwing error of undefined symbol.
-3) Now to track the totak exits, increment the variable defined in step 1 each time you encounter and process a vmx_handle_exit() method. You can find the implementation of vmx_handle_exit in arch/x86/kvm/vmx/vmx.c.
+3) Now to track the totak exits, increment the variable defined in step 1 each time you encounter and process a cpuid emulation in vmx_handle_exit() method. You can find the implementation of vmx_handle_exit in arch/x86/kvm/vmx/vmx.c and cpuid emulation in kvm_emulate_cpuid(...) in <linux>/arch/x86/kvm/cpuid.c
 4) Now to process the requests related to retrieving this count, we need to make changes in how the cpuid command is simulated by the KVM. To do this, in file <linux>/arch/x86/kvm/cpuid.c locate the method kvm_emulate_cpuid(...) . This is the place where you can add additionaly functionality as required in the assignement 1. Add changes for processing cpuid leaf node values. The current submission tracks on the total number of exits and the number of cycles.
 5)To process  CPUID leaf node request 0x4FFFFFFF, check and compare it with the contents of eax, if its equal to eax load it with the total counts of exits tracked by the variable defined in Step 1.
 
