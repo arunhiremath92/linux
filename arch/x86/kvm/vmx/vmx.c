@@ -454,6 +454,7 @@ static inline void vmx_segment_cache_clear(struct vcpu_vmx *vmx)
 
 static unsigned long host_idt_base;
 
+
 #if IS_ENABLED(CONFIG_HYPERV)
 static bool __read_mostly enlightened_vmcs = true;
 module_param(enlightened_vmcs, bool, 0444);
@@ -6009,6 +6010,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	if (!kvm_vmx_exit_handlers[exit_handler_index])
 		goto unexpected_vmexit;
 
+	total_exits +=1;
 	return kvm_vmx_exit_handlers[exit_handler_index](vcpu);
 
 unexpected_vmexit:
@@ -6026,7 +6028,10 @@ unexpected_vmexit:
 
 static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
-	int ret = __vmx_handle_exit(vcpu, exit_fastpath);
+	u64 entry_time, exit_time; 	
+	int ret;
+	entry_time = rdtsc();
+	ret  = __vmx_handle_exit(vcpu, exit_fastpath);
 
 	/*
 	 * Exit to user space when bus lock detected to inform that there is
@@ -6039,6 +6044,9 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 		vcpu->run->flags |= KVM_RUN_X86_BUS_LOCK;
 		return 0;
 	}
+	
+	exit_time = rdtsc();
+	total_exit_time += exit_time - entry_time;
 	return ret;
 }
 

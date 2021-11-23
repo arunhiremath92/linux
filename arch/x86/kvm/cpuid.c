@@ -32,6 +32,12 @@
 u32 kvm_cpu_caps[NR_KVM_CPU_CAPS] __read_mostly;
 EXPORT_SYMBOL_GPL(kvm_cpu_caps);
 
+
+u32 total_exits;
+EXPORT_SYMBOL_GPL(total_exits);
+
+u64 total_exit_time;
+EXPORT_SYMBOL_GPL(total_exit_time);
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -61,6 +67,8 @@ static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 
 #define F feature_bit
 #define SF(name) (boot_cpu_has(X86_FEATURE_##name) ? F(name) : 0)
+
+
 
 
 static inline struct kvm_cpuid_entry2 *cpuid_entry2_find(
@@ -1268,13 +1276,43 @@ EXPORT_SYMBOL_GPL(kvm_cpuid);
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
-
+	
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
 
 	eax = kvm_rax_read(vcpu);
 	ecx = kvm_rcx_read(vcpu);
-	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+
+
+	if(eax == 0x4FFFFFFF){
+		// Return the total number of exits (all types) in %eax
+		eax = total_exits;
+		ebx = 0x0;
+		ecx = 0x0;
+		edx = 0x0;
+
+	}else if(eax == 0x4FFFFFFE){
+		// Return the high 32 bits of the total time spent processing all exits in %ebx	
+		ebx = (total_exit_time & 0xFFFFFFFF00000000LL) >> 32;
+		// Return the low 32 bits of the total time spent processing all exits in %ecx
+		ecx = total_exit_time & 0xFFFFFFFFLL;
+		edx = 0x0;
+
+	}else if(eax == 0x4FFFFFFD){
+		//Return the number of exits for the exit number provided (on input) in %ecx
+		//This value should be returned in %eax
+
+	}else if(eax == 0x4FFFFFFC){
+		// Return the time spent processing the exit number provided (on input) in %ecx
+		// ▪ Return the high 32 bits of the total time spent for that exit in %ebx
+		// ▪ Return the low 32 bits of the total time spent for that exit in %ecx
+
+
+	}else {
+		// Regular Handling of CPUID
+		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
+
+	} 
 	kvm_rax_write(vcpu, eax);
 	kvm_rbx_write(vcpu, ebx);
 	kvm_rcx_write(vcpu, ecx);
