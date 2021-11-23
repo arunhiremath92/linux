@@ -40,7 +40,7 @@ References:
 // Reference code for packing and unpacking the 32 bit in to 64 bit data: https://stackoverflow.com/a/2810302
 
 
-Change Request : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972
+All CPUID emulation changes are in  : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972
 
 
 
