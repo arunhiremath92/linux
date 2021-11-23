@@ -2,6 +2,7 @@
 implemented / researched. (You may skip this question if you are doing the lab by yourself).
 
 - Done by myself
+- All CPUID emulation changes are in  : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972
 
 2. Describe in detail the steps you used to complete the assignment. Consider your reader to be someone
 skilled in software development but otherwise unfamiliar with the assignment. Good answers to this
@@ -35,16 +36,6 @@ Testing:
 1) I have included a test program which was compiled and run on the inner virtual machine(Cent OS). THe program calls  the cpuid method, and the value of leaf nodes can be passed as a value of eax variable. The sample output from the file is below.
 
 
-References: 
-// Reference Code for test program : taken from https://stackoverflow.com/a/6491964
-// Reference code for packing and unpacking the 32 bit in to 64 bit data: https://stackoverflow.com/a/2810302
-
-
-All CPUID emulation changes are in  : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972
-
-
-
-
 <br>--------------------------------------------------------------------------<br>
 Raw Output eax:116693588 | ebx:0 | ecx:0 | edx:0<br>
 Total Number of Exits : 116693588<br>
@@ -52,5 +43,13 @@ Total Number of Exits : 116693588<br>
 Raw Output eax:1342177278 | ebx:76 | ecx:795086612 | edx:0<br>
 Total Timespent in all exits : 327212601108<br>
 <br>--------------------------------------------------------------------------<br>
+
+    
+
+References: 
+// Reference Code for test program : taken from https://stackoverflow.com/a/6491964
+// Reference code for packing and unpacking the 32 bit in to 64 bit data: https://stackoverflow.com/a/2810302
+
+
 
 
