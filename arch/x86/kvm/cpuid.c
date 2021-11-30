@@ -38,6 +38,27 @@ EXPORT_SYMBOL_GPL(total_exits);
 
 u64 total_exit_time;
 EXPORT_SYMBOL_GPL(total_exit_time);
+
+// VM_EXITS undefined in the SDM
+#define VM_EXIT_NS_1 35
+#define VM_EXIT_NS_2 38
+#define VM_EXIT_NS_3 42
+#define VM_EXIT_NS_4 65
+
+
+u32 exit_count_lookup_table [CUSTOM_EXIT_COUNTS] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+u64 exit_time_lookup_table  [CUSTOM_EXIT_COUNTS] =  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+u32 exit_enabled            [CUSTOM_EXIT_COUNTS] =  { 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1};
+
+
+
+static const int max_exit_handlers_supported = ARRAY_SIZE(exit_enabled);
+
+
+
+EXPORT_SYMBOL_GPL(exit_count_lookup_table);
+EXPORT_SYMBOL_GPL(exit_time_lookup_table);
+
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -1273,6 +1294,93 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 }
 EXPORT_SYMBOL_GPL(kvm_cpuid);
 
+
+
+
+
+bool if_exit_is_supported(int exit_number){
+	if (exit_number >=max_exit_handlers_supported || (exit_number == VM_EXIT_NS_1) || (exit_number == VM_EXIT_NS_2) || (exit_number == VM_EXIT_NS_3)  || (exit_number == VM_EXIT_NS_4))
+		return false;
+	return true;
+}
+
+
+bool if_exit_is_enabled(int exit_number){
+	if ( exit_number >=max_exit_handlers_supported  || exit_enabled[exit_number] == 0)
+		return false;
+	return true;
+}
+
+
+void find_exit_counts(u32 *eax, u32 *ebx, u32 *ecx, u32 *edx){
+
+	// check if the exit values exists, if not return 0 in eax, ebx and ecx
+	u32 exit_to_check = *ecx;
+	//Return the number of exits for the exit number provided (on input) in %ecx
+	//This value should be returned in %eax
+
+	// For leaf nodes 0x4FFFFFFD and 0x4FFFFFFC, if %ecx (on input) contains a value not defined by the
+	// SDM, return 0 in all %eax, %ebx, %ecx registers and return 0xFFFFFFFF in %edx. For exit types not
+	// enabled in KVM, return 0s in all four registers.
+
+	
+	
+	if(!if_exit_is_supported(exit_to_check)){
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0xFFFFFFFF;
+	}
+	else if(!if_exit_is_enabled(exit_to_check)){
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0;
+	}else{
+		*eax = exit_count_lookup_table[exit_to_check]-1;
+		*ebx = 0;
+		*edx = 0;
+	}
+
+}
+
+
+
+
+void find_exit_cpu_time(u32 *eax, u32 *ebx, u32 *ecx, u32 *edx){
+
+	u32 exit_to_check = *ecx;
+
+	//Return the number of exits for the exit number provided (on input) in %ecx
+	//This value should be returned in %eax
+
+	// For leaf nodes 0x4FFFFFFD and 0x4FFFFFFC, if %ecx (on input) contains a value not defined by the
+	// SDM, return 0 in all %eax, %ebx, %ecx registers and return 0xFFFFFFFF in %edx. For exit types not
+	// enabled in KVM, return 0s in all four registers.
+
+
+	if(!if_exit_is_supported(exit_to_check)){
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0xFFFFFFFF;
+	}
+	else if(!if_exit_is_enabled(exit_to_check)){
+		*eax = 0;
+		*ebx = 0;
+		*ecx = 0;
+		*edx = 0;
+	}else{
+		u64 exit_time = exit_time_lookup_table[exit_to_check];
+		
+		*ebx = (exit_time & 0xFFFFFFFF00000000LL) >> 32;
+		// Return the low 32 bits of the total time spent processing all exits in %ecx
+		*ecx = exit_time & 0xFFFFFFFFLL;
+		*edx = 0x0;
+
+	}
+}
+
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
@@ -1301,11 +1409,13 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	}else if(eax == 0x4FFFFFFD){
 		//Return the number of exits for the exit number provided (on input) in %ecx
 		//This value should be returned in %eax
+		find_exit_counts(&eax, &ebx, &ecx, &edx);
 
 	}else if(eax == 0x4FFFFFFC){
 		// Return the time spent processing the exit number provided (on input) in %ecx
 		// ▪ Return the high 32 bits of the total time spent for that exit in %ebx
 		// ▪ Return the low 32 bits of the total time spent for that exit in %ecx
+		find_exit_cpu_time(&eax, &ebx, &ecx, &edx);
 
 
 	}else {
@@ -1319,4 +1429,6 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	kvm_rdx_write(vcpu, edx);
 	return kvm_skip_emulated_instruction(vcpu);
 }
+
+
 EXPORT_SYMBOL_GPL(kvm_emulate_cpuid);

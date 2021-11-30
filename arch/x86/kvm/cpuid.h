@@ -7,12 +7,17 @@
 #include <asm/cpu.h>
 #include <asm/processor.h>
 #include <uapi/asm/kvm_para.h>
+#define CUSTOM_EXIT_COUNTS  69
 
 extern u32 kvm_cpu_caps[NR_KVM_CPU_CAPS] __read_mostly;
 
 extern u32 total_exits;
 
 extern u64 total_exit_time;
+
+extern u32 exit_count_lookup_table [CUSTOM_EXIT_COUNTS] ; 
+
+extern u64 exit_time_lookup_table [CUSTOM_EXIT_COUNTS];
 
 void kvm_set_cpu_caps(void);
 
