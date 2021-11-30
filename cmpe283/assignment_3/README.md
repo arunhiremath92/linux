@@ -19,20 +19,17 @@ e) A test program test_program.c
 
 
 Changes :
-1) My current CPU is intel and for task 1, all I had to do was declare a extern variable in the <linux>/arch/x86/kvm/cpuid.h to track the total counts of the exit for cpuid.
-2) Making this variable does not export it for use in other modules, so I had to redefine it in <linux>/arch/x86/kvm/cpuid.c and export it using EXPORT_SYMBOL_GPL 
-    EXPORT_SYMBOL_GPL exports the values to be used in other modules signed with GPL licenses. Without this the kernel tree compilation keeps throwing error of undefined symbol.
-3) Now to track the totak exits, increment the variable defined in step 1 each time you encounter and process a vmx_handle_exit() method. You can find the implementation of vmx_handle_exit in arch/x86/kvm/vmx/vmx.c.
-4) Now to process the requests related to retrieving this count, we need to make changes in how the cpuid command is simulated by the KVM. To do this, in file <linux>/arch/x86/kvm/cpuid.c locate the method kvm_emulate_cpuid(...) . This is the place where you can add additionaly functionality as required in the assignement 1. Add changes for processing cpuid leaf node values. The current submission tracks on the total number of exits and the number of cycles.
-5)To process  CPUID leaf node request 0x4FFFFFFF, check and compare it with the contents of eax, if its equal to eax load it with the total counts of exits tracked by the variable defined in Step 1.
 
-5) Part of 2 the assignment is to track the total cpu cycles spent per VM exit calls and retreive for the CPUID leafe node request 0x4FFFFFFE. To do this, define another variable (this time of 8 byte size) to track the cpu cycles. Repeat the steps 1 and 2 to make it available for all other variables.
-6) To specifically track the cpucyles in processing VM exit, I have used the rtdsc() call to record the current cpu cycles before sending the request to be handled by a vm exit funciton. I repeat this call once the VM exit is processed and take a delta of exit and entry time to track the cpu cycles spent for one exit. The delta is then addded to the variable tracking all cpu cycles defined in step 5. Changes for adding entry and exit measurements are added in vmx_handle_exit(...) method of <linux>/arch/x86/kvm/vmx.c file.
-7) To report the cpu cylce value, listen to leaf node request 0x4FFFFFFE as in Step 4, and fill the variable ebx and ecs with higher 32 bits and lower 32 bits respectively of the variable tracking all cpu cycles defined in step 5
+Continuing from the previous assignment 2, 
+
+1) To track the count of each VM exit, I have definea lookup table and used the exit_reason as an index to update the count in vm_handle_exit
+2) Similary, I have defined constants to check if the exit in ecx was not defined in SDM and a similar lookup table as above to know if the kvm has defined support for the current VM_exit. Having lookup really simplified the tracking and checking of vm exits.
+3) A similar approach is done for tracking the cpu cycle of a particular VM_exit. I modifiet the implementation of _handle_vm_exit(...) to measure the start and end time of the exit_handler. Accordingly the cpu cycles are updated using the exit reason.
+
 
 Testing:
 
-1) I have included a test program which was compiled and run on the inner virtual machine(Cent OS). THe program calls  the cpuid method, and the value of leaf nodes can be passed as a value of eax variable. The sample output from the file is below.
+1) I have included a test program which was compiled and run on the inner virtual machine(Cent OS). THe program calls  the cpuid method, and the value of leaf nodes can be passed as a value of eax variable and ecx variable . The sample output from the file is below.
 
 
 References: 
@@ -40,44 +37,44 @@ References:
 // Reference code for packing and unpacking the 32 bit in to 64 bit data: https://stackoverflow.com/a/2810302
 
 
-Change Request : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972
+Change Request : https://github.com/arunhiremath92/linux/commit/7f3e52cf46b84e1a9aeee9f0780a3a8c8d625972  
 
 
+<h3> Program Output </h3>  
 
-
-Current Input eax:1342177279 | ebx:-2101743744 | ecx:0 | edx:4195568
-Raw Output eax:1111527 | ebx:0 | ecx:0 | edx:0
-Total Number of Exits : 1111527
---------------------------------------------------------------------------
-Current Input eax:1342177278 | ebx:0 | ecx:0 | edx:0
-Raw Output eax:1342177278 | ebx:3 | ecx:2060367898 | edx:0
-Total Timespent in all exits : 14945269786
---------------------------------------------------------------------------
-Testing the total exits for the exit 10(CPUID Itself)
-Current Input eax:1342177277 | ebx:3 | ecx:4 | edx:0
-Raw Output eax:0 | ebx:0 | ecx:0 | edx:0
---------------------------------------------------------------------------
-Testing the total CPU CYCLES  for the exit 10(CPUID Itself)
-Current Input eax:1342177276 | ebx:0 | ecx:10 | edx:0
-Raw Output eax:1342177276 | ebx:0 | ecx:1418211925 | edx:0
-Total Timespent in CPUID exits : 1418211925
---------------------------------------------------------------------------
-Testing the total exits for the exit 35- Which is not defined by SDM
-Current Input eax:1342177277 | ebx:0 | ecx:35 | edx:0
-Raw Output eax:0 | ebx:0 | ecx:0 | edx:-1
---------------------------------------------------------------------------
-Testing the total or the exit 35- Which is not defined by SDM
-Current Input eax:1342177276 | ebx:0 | ecx:35 | edx:-1
-Raw Output eax:0 | ebx:0 | ecx:0 | edx:-1
---------------------------------------------------------------------------
-Testing the total exit for 04- Which is not enabled by KVM
-Current Input eax:1342177277 | ebx:0 | ecx:4 | edx:-1
-Raw Output eax:0 | ebx:0 | ecx:0 | edx:0
---------------------------------------------------------------------------
-Testing the total or the exit 04- Which is not enabled by KVM
-Current Input eax:1342177276 | ebx:0 | ecx:4 | edx:0
-Raw Output eax:0 | ebx:0 | ecx:0 | edx:0
---------------------------------------------------------------------------
+Current Input eax:1342177279 | ebx:-2101743744 | ecx:0 | edx:4195568  
+Raw Output eax:1111527 | ebx:0 | ecx:0 | edx:0  
+Total Number of Exits : 1111527  
+\--------------------------------------------------------------------------  
+Current Input eax:1342177278 | ebx:0 | ecx:0 | edx:0  
+Raw Output eax:1342177278 | ebx:3 | ecx:2060367898 | edx:0  
+Total Timespent in all exits : 14945269786  
+\--------------------------------------------------------------------------  
+Testing the total exits for the exit 10(CPUID Itself)  
+Current Input eax:1342177277 | ebx:3 | ecx:4 | edx:0  
+Raw Output eax:0 | ebx:0 | ecx:0 | edx:0  
+\--------------------------------------------------------------------------  
+Testing the total CPU CYCLES  for the exit 10(CPUID Itself)  
+Current Input eax:1342177276 | ebx:0 | ecx:10 | edx:0  
+Raw Output eax:1342177276 | ebx:0 | ecx:1418211925 | edx:0  
+Total Timespent in CPUID exits : 1418211925  
+\--------------------------------------------------------------------------  
+Testing the total exits for the exit 35- Which is not defined by SDM  
+Current Input eax:1342177277 | ebx:0 | ecx:35 | edx:0  
+Raw Output eax:0 | ebx:0 | ecx:0 | edx:-1  
+\--------------------------------------------------------------------------  
+Testing the total or the exit 35- Which is not defined by SDM  
+Current Input eax:1342177276 | ebx:0 | ecx:35 | edx:-1  
+Raw Output eax:0 | ebx:0 | ecx:0 | edx:-1  
+\--------------------------------------------------------------------------  
+Testing the total exit for 04- Which is not enabled by KVM  
+Current Input eax:1342177277 | ebx:0 | ecx:4 | edx:-1  
+Raw Output eax:0 | ebx:0 | ecx:0 | edx:0  
+\--------------------------------------------------------------------------  
+Testing the total or the exit 04- Which is not enabled by KVM  
+Current Input eax:1342177276 | ebx:0 | ecx:4 | edx:0  
+Raw Output eax:0 | ebx:0 | ecx:0 | edx:0  
+\--------------------------------------------------------------------------  
 
 
 
