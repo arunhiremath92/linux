@@ -4,7 +4,6 @@ Submitted the assignment alone
 
 2. Include a sample of your print of exit count output from dmesg from “with ept” and “without ept”.  
 
-
 With Nested Paging Table: Boot 1  
 Current Input eax:1342177279 | ebx:0 | ecx:32764 | edx:-1494524048  
 Raw Output eax:1101006 | ebx:0 | ecx:0 | edx:0  
@@ -13,11 +12,11 @@ Total Number of Exits : 1101006
 
 
 
-With Nested Paging Disabled  
-Current Input eax:1342177279 | ebx:0 | ecx:32765 | edx:-981116048  
-Raw Output eax:13753954 | ebx:0 | ecx:0 | edx:0  
-Total Number of Exits : 13753954  
-/-------------------------------------------------------------------------  
+ Wth Nested Paging Disabled  
+ urrent Input eax:1342177279 | ebx:0 | ecx:32765 | edx:-981116048  
+ Rw Output eax:13753954 | ebx:0 | ecx:0 | edx:0  
+ Total Number of Exits : 13753954  
+ /-------------------------------------------------------------------------  
 
 
 
