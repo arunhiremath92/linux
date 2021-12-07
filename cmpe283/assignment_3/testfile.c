@@ -28,7 +28,6 @@ int main(int argc, char **argv)
   eax = 0x4FFFFFFF;
   printf("Current Input eax:%d | ebx:%d | ecx:%d | edx:%d\n", eax, ebx, ecx, edx);
   native_cpuid(&eax, &ebx, &ecx, &edx);
-  printf("--------------------------------------------------------------------------\n");
   printf("Raw Output eax:%d | ebx:%d | ecx:%d | edx:%d\n", eax, ebx, ecx, edx);
   printf("Total Number of Exits : %d\n", eax);
   printf("--------------------------------------------------------------------------\n");
@@ -86,7 +85,7 @@ int main(int argc, char **argv)
 
 
 
-  printf("Testing the total exit for 04- Which is not enabled by KVM\n")
+  printf("Testing the total exit for 04- Which is not enabled by KVM\n");
   eax = 0x4FFFFFFD;
   ecx = 0x04;
   printf("Current Input eax:%d | ebx:%d | ecx:%d | edx:%d\n", eax, ebx, ecx, edx);
